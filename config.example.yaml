@@ -29,5 +29,5 @@ llm:
   smart_generation: false
 
 defaults:
-  # Default number of tracks in generated playlists (15, 25, or 40)
+  # Default playlist size selected in the UI (15, 25, 50, 100, or 200)
   track_count: 25

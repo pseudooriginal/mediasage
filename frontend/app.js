@@ -93,6 +93,7 @@ const state = {
     selectedGenres: [],
     selectedDecades: [],
     trackCount: 25,
+    trackCountChosen: false,  // true once the user picks a size (config default no longer applies)
     excludeLive: true,
     maxTracksToAI: 500,  // 0 = no limit
     minRating: 0,  // 0 = any, 2/4/6/8 = 1/2/3/4 stars minimum
@@ -1176,12 +1177,7 @@ function updateFilters() {
         decadeContainer.querySelector(`[data-decade="${CSS.escape(focusedDecade)}"]`)?.focus();
     }
 
-    // Update track count buttons
-    document.querySelectorAll('.count-btn').forEach(btn => {
-        const isActive = parseInt(btn.dataset.count) === state.trackCount;
-        btn.classList.toggle('active', isActive);
-        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
+    updateTrackCountButtons();
 
     // Update max tracks to AI buttons
     const maxAllowed = state.config?.max_tracks_to_ai || 3500;
@@ -1229,6 +1225,14 @@ function updateModelSuggestion() {
         // Using Gemini or a local model with large context - no suggestion needed
         suggestion.classList.add('hidden');
     }
+}
+
+function updateTrackCountButtons() {
+    document.querySelectorAll('.count-btn').forEach(btn => {
+        const isActive = parseInt(btn.dataset.count) === state.trackCount;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
 }
 
 function updateTrackLimitButtons() {
@@ -2644,6 +2648,7 @@ function setupEventListeners() {
     document.querySelectorAll('.count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             state.trackCount = parseInt(btn.dataset.count);
+            state.trackCountChosen = true;
             updateFilters();
             recalculateCostDisplay();
         });
@@ -3206,6 +3211,13 @@ async function handleSavePlaylist() {
 async function loadSettings() {
     try {
         state.config = await fetchConfig();
+
+        // Default playlist size from config (defaults.track_count), if it matches a size option
+        const defaultCount = state.config.defaults?.track_count;
+        if (!state.trackCountChosen && document.querySelector(`.count-btn[data-count="${defaultCount}"]`)) {
+            state.trackCount = defaultCount;
+            updateTrackCountButtons();
+        }
 
         // Set max tracks/albums to AI based on model's context limit
         if (state.config.max_tracks_to_ai) {

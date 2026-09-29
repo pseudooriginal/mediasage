@@ -188,8 +188,8 @@ def generate_playlist_stream(
         else:
             yield emit("progress", {"step": "fetching", "message": "Fetching tracks from library..."})
 
-        logger.info("Fetching tracks: genres=%s, decades=%s, min_rating=%s, using_cache=%s",
-                    genres, decades, min_rating, using_cache)
+        logger.info("Fetching tracks: genres=%s, decades=%s, min_rating=%s, using_cache=%s, track_count=%d",
+                    genres, decades, min_rating, using_cache, track_count)
         try:
             filtered_tracks = _get_tracks_from_cache_or_plex(
                 plex_client=plex_client,
@@ -246,6 +246,8 @@ def generate_playlist_stream(
                 generation_parts.append(f"User preferences: {', '.join(answered)}")
 
         generation_parts.append(f"\nSelect {track_count} tracks from this library:\n{track_list}")
+        # Repeat the count after the (possibly very long) track list so it isn't lost
+        generation_parts.append(f"Return exactly {track_count} tracks from the list above.")
 
         generation_prompt = "\n\n".join(generation_parts)
 
@@ -264,6 +266,8 @@ def generate_playlist_stream(
         if not isinstance(track_selections, list):
             yield emit("error", {"message": "LLM returned invalid track selection format"})
             return
+
+        logger.info("LLM returned %d selections (requested %d)", len(track_selections), track_count)
 
         # Step 6: Match tracks
         yield emit("progress", {"step": "matching", "message": f"Matching {len(track_selections)} selections to library..."})
