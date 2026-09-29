@@ -237,7 +237,7 @@ class TestLLMClientTokenTracking:
             assert result.output_tokens == 75
             assert result.total_tokens == 225
             call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-            assert call_kwargs["max_completion_tokens"] == 16000
+            assert call_kwargs["max_completion_tokens"] == 32000
             assert "max_tokens" not in call_kwargs
 
     def test_anthropic_skips_thinking_blocks(self, mocker):

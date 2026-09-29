@@ -102,7 +102,7 @@ class LLMClient:
         # Current models think adaptively; max_tokens covers thinking + answer
         response = self._client.messages.create(
             model=model,
-            max_tokens=16000,
+            max_tokens=20000,
             system=system,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -128,7 +128,7 @@ class LLMClient:
         # OpenAI reasoning models reject max_tokens; custom endpoints may not
         # know max_completion_tokens, so keep max_tokens for them
         token_limit = (
-            {"max_completion_tokens": 16000}
+            {"max_completion_tokens": 32000}
             if self.provider == "openai"
             else {"max_tokens": 8192}
         )

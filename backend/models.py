@@ -56,8 +56,8 @@ class FilterSet(BaseModel):
     @field_validator("track_count")
     @classmethod
     def validate_track_count(cls, v: int) -> int:
-        if v not in [15, 25, 50, 100]:
-            raise ValueError("track_count must be 15, 25, 50, or 100")
+        if v not in [15, 25, 50, 100, 200]:
+            raise ValueError("track_count must be 15, 25, 50, 100, or 200")
         return v
 
 
