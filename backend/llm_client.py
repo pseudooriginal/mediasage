@@ -13,36 +13,13 @@ import httpx
 from json_repair import repair_json
 import openai
 
+from backend.model_catalog import MODEL_CONTEXT_LIMITS, MODEL_COSTS
 from backend.models import LLMConfig, OllamaModel, OllamaModelInfo, OllamaModelsResponse, OllamaStatus
 
 logger = logging.getLogger(__name__)
 
 
-# Cost per million tokens (updated Feb 2026)
-MODEL_COSTS = {
-    # Anthropic models (input/output per million tokens)
-    "claude-sonnet-4-5": {"input": 3.00, "output": 15.00},
-    "claude-haiku-4-5": {"input": 1.00, "output": 5.00},
-    # OpenAI models
-    "gpt-4.1": {"input": 2.00, "output": 8.00},
-    "gpt-4.1-mini": {"input": 0.40, "output": 1.60},
-    # Google Gemini models
-    "gemini-2.5-pro": {"input": 1.25, "output": 5.00},
-    "gemini-2.5-flash": {"input": 0.30, "output": 2.50},
-}
-
-# Context limits per model (in tokens) - used to calculate max tracks
-MODEL_CONTEXT_LIMITS = {
-    # Anthropic
-    "claude-sonnet-4-5": 200_000,
-    "claude-haiku-4-5": 200_000,
-    # OpenAI
-    "gpt-4.1": 128_000,
-    "gpt-4.1-mini": 128_000,
-    # Google Gemini
-    "gemini-2.5-pro": 1_000_000,
-    "gemini-2.5-flash": 1_000_000,
-}
+# Pricing and context windows come from the model catalog (backend/model_catalog.yaml)
 
 # Tokens per track (based on real-world testing, Feb 2026)
 TOKENS_PER_TRACK = 40
@@ -76,7 +53,7 @@ def estimate_cost_for_model(
     """Estimate cost in USD for a given model and token counts.
 
     Args:
-        model: Model name (e.g., 'claude-haiku-4-5', 'gpt-4.1-mini')
+        model: Model name (e.g., 'claude-sonnet-5-5', 'gpt-6-luna')
         input_tokens: Estimated input token count
         output_tokens: Estimated output token count
         config: Optional LLMConfig to check for local providers
@@ -122,15 +99,20 @@ class LLMClient:
     ) -> LLMResponse:
         """Make a completion request to Anthropic."""
         logger.info("Calling Anthropic API with %d char prompt", len(prompt))
+        # Current models think adaptively; max_tokens covers thinking + answer
         response = self._client.messages.create(
             model=model,
-            max_tokens=8192,
+            max_tokens=16000,
             system=system,
             messages=[{"role": "user", "content": prompt}],
         )
-        logger.debug("Anthropic response received")
+        logger.debug("Anthropic response received (stop_reason=%s)", response.stop_reason)
 
-        content = response.content[0].text
+        if response.stop_reason == "refusal":
+            raise ValueError("Anthropic declined the request (refusal)")
+
+        # Skip thinking blocks, keep only the text answer
+        content = "".join(block.text for block in response.content if block.type == "text")
         return LLMResponse(
             content=content,
             input_tokens=response.usage.input_tokens,
@@ -143,13 +125,20 @@ class LLMClient:
     ) -> LLMResponse:
         """Make a completion request to OpenAI or custom OpenAI-compatible endpoint."""
         logger.info("Calling OpenAI-compatible API with %d char prompt", len(prompt))
+        # OpenAI reasoning models reject max_tokens; custom endpoints may not
+        # know max_completion_tokens, so keep max_tokens for them
+        token_limit = (
+            {"max_completion_tokens": 16000}
+            if self.provider == "openai"
+            else {"max_tokens": 8192}
+        )
         response = self._client.chat.completions.create(
             model=model,
-            max_tokens=8192,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
             ],
+            **token_limit,
         )
         logger.debug("OpenAI-compatible response received")
 

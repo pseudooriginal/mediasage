@@ -349,12 +349,7 @@ async def setup_validate_ai(request: ValidateAIRequest) -> ValidateAIResponse:
         elif provider == "anthropic":
             import anthropic
             client = anthropic.Anthropic(api_key=request.api_key)
-            await asyncio.to_thread(
-                client.messages.create,
-                model="claude-haiku-4-5",
-                max_tokens=1,
-                messages=[{"role": "user", "content": "hi"}],
-            )
+            await asyncio.to_thread(lambda: list(client.models.list()))
 
         elif provider == "ollama":
             status = await asyncio.to_thread(get_ollama_status, request.ollama_url or "http://localhost:11434")

@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 
 class TestLLMClientInitialization:
     """Tests for LLM client initialization."""
@@ -14,8 +16,8 @@ class TestLLMClientInitialization:
         config = LLMConfig(
             provider="anthropic",
             api_key="sk-ant-test-key",
-            model_analysis="claude-sonnet-4-5-latest",
-            model_generation="claude-haiku-4-5-latest",
+            model_analysis="claude-opus-5-5",
+            model_generation="claude-sonnet-5-5",
         )
 
         with patch("backend.llm_client.anthropic") as mock_anthropic:
@@ -31,8 +33,8 @@ class TestLLMClientInitialization:
         config = LLMConfig(
             provider="openai",
             api_key="sk-test-key",
-            model_analysis="gpt-4.1",
-            model_generation="gpt-4.1-mini",
+            model_analysis="gpt-6-sol",
+            model_generation="gpt-6-luna",
         )
 
         with patch("backend.llm_client.openai") as mock_openai:
@@ -48,8 +50,8 @@ class TestLLMClientInitialization:
         config = LLMConfig(
             provider="anthropic",
             api_key="invalid-key",
-            model_analysis="claude-sonnet-4-5-latest",
-            model_generation="claude-haiku-4-5-latest",
+            model_analysis="claude-opus-5-5",
+            model_generation="claude-sonnet-5-5",
         )
 
         with patch("backend.llm_client.anthropic") as mock_anthropic:
@@ -66,8 +68,8 @@ class TestLLMClientInitialization:
         config = LLMConfig(
             provider="openai",
             api_key="invalid-key",
-            model_analysis="gpt-4.1",
-            model_generation="gpt-4.1-mini",
+            model_analysis="gpt-6-sol",
+            model_generation="gpt-6-luna",
         )
 
         with patch("backend.llm_client.openai") as mock_openai:
@@ -88,12 +90,12 @@ class TestLLMClientAnalyze:
         config = LLMConfig(
             provider="anthropic",
             api_key="test-key",
-            model_analysis="claude-sonnet-4-5-latest",
-            model_generation="claude-haiku-4-5-latest",
+            model_analysis="claude-opus-5-5",
+            model_generation="claude-sonnet-5-5",
         )
 
         mock_response = MagicMock()
-        mock_response.content = [MagicMock(text='{"result": "test"}')]
+        mock_response.content = [MagicMock(type="text", text='{"result": "test"}')]
         mock_response.usage.input_tokens = 100
         mock_response.usage.output_tokens = 50
 
@@ -107,7 +109,7 @@ class TestLLMClientAnalyze:
 
             # Verify the analysis model was used
             call_args = mock_client.messages.create.call_args
-            assert call_args.kwargs["model"] == "claude-sonnet-4-5-latest"
+            assert call_args.kwargs["model"] == "claude-opus-5-5"
 
 
 class TestLLMClientGenerate:
@@ -121,13 +123,13 @@ class TestLLMClientGenerate:
         config = LLMConfig(
             provider="anthropic",
             api_key="test-key",
-            model_analysis="claude-sonnet-4-5-latest",
-            model_generation="claude-haiku-4-5-latest",
+            model_analysis="claude-opus-5-5",
+            model_generation="claude-sonnet-5-5",
             smart_generation=False,
         )
 
         mock_response = MagicMock()
-        mock_response.content = [MagicMock(text='[{"artist": "Test", "title": "Song"}]')]
+        mock_response.content = [MagicMock(type="text", text='[{"artist": "Test", "title": "Song"}]')]
         mock_response.usage.input_tokens = 100
         mock_response.usage.output_tokens = 50
 
@@ -141,7 +143,7 @@ class TestLLMClientGenerate:
 
             # Verify the generation model was used
             call_args = mock_client.messages.create.call_args
-            assert call_args.kwargs["model"] == "claude-haiku-4-5-latest"
+            assert call_args.kwargs["model"] == "claude-sonnet-5-5"
 
     def test_smart_generation_uses_analysis_model(self, mocker):
         """Should use analysis model when smart_generation is enabled."""
@@ -151,13 +153,13 @@ class TestLLMClientGenerate:
         config = LLMConfig(
             provider="anthropic",
             api_key="test-key",
-            model_analysis="claude-sonnet-4-5-latest",
-            model_generation="claude-haiku-4-5-latest",
+            model_analysis="claude-opus-5-5",
+            model_generation="claude-sonnet-5-5",
             smart_generation=True,
         )
 
         mock_response = MagicMock()
-        mock_response.content = [MagicMock(text='[{"artist": "Test", "title": "Song"}]')]
+        mock_response.content = [MagicMock(type="text", text='[{"artist": "Test", "title": "Song"}]')]
         mock_response.usage.input_tokens = 100
         mock_response.usage.output_tokens = 50
 
@@ -171,7 +173,7 @@ class TestLLMClientGenerate:
 
             # Verify the analysis model was used for generation
             call_args = mock_client.messages.create.call_args
-            assert call_args.kwargs["model"] == "claude-sonnet-4-5-latest"
+            assert call_args.kwargs["model"] == "claude-opus-5-5"
 
 
 class TestLLMClientTokenTracking:
@@ -185,12 +187,12 @@ class TestLLMClientTokenTracking:
         config = LLMConfig(
             provider="anthropic",
             api_key="test-key",
-            model_analysis="claude-sonnet-4-5-latest",
-            model_generation="claude-haiku-4-5-latest",
+            model_analysis="claude-opus-5-5",
+            model_generation="claude-sonnet-5-5",
         )
 
         mock_response = MagicMock()
-        mock_response.content = [MagicMock(text='{"result": "test"}')]
+        mock_response.content = [MagicMock(type="text", text='{"result": "test"}')]
         mock_response.usage.input_tokens = 150
         mock_response.usage.output_tokens = 75
 
@@ -214,8 +216,8 @@ class TestLLMClientTokenTracking:
         config = LLMConfig(
             provider="openai",
             api_key="test-key",
-            model_analysis="gpt-4.1",
-            model_generation="gpt-4.1-mini",
+            model_analysis="gpt-6-sol",
+            model_generation="gpt-6-luna",
         )
 
         mock_response = MagicMock()
@@ -234,6 +236,63 @@ class TestLLMClientTokenTracking:
             assert result.input_tokens == 150
             assert result.output_tokens == 75
             assert result.total_tokens == 225
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            assert call_kwargs["max_completion_tokens"] == 16000
+            assert "max_tokens" not in call_kwargs
+
+    def test_anthropic_skips_thinking_blocks(self, mocker):
+        """Should return only text blocks when the model also returns thinking."""
+        from backend.llm_client import LLMClient
+        from backend.models import LLMConfig
+
+        config = LLMConfig(
+            provider="anthropic",
+            api_key="test-key",
+            model_analysis="claude-opus-5-5",
+            model_generation="claude-sonnet-5-5",
+        )
+
+        mock_response = MagicMock()
+        mock_response.stop_reason = "end_turn"
+        mock_response.content = [
+            MagicMock(type="thinking", thinking=""),
+            MagicMock(type="text", text='{"result": "test"}'),
+        ]
+        mock_response.usage.input_tokens = 10
+        mock_response.usage.output_tokens = 5
+
+        with patch("backend.llm_client.anthropic") as mock_anthropic:
+            mock_client = MagicMock()
+            mock_client.messages.create.return_value = mock_response
+            mock_anthropic.Anthropic.return_value = mock_client
+
+            result = LLMClient(config).analyze("test prompt", "system prompt")
+
+            assert result.content == '{"result": "test"}'
+
+    def test_anthropic_refusal_raises(self, mocker):
+        """Should raise when the model declines the request."""
+        from backend.llm_client import LLMClient
+        from backend.models import LLMConfig
+
+        config = LLMConfig(
+            provider="anthropic",
+            api_key="test-key",
+            model_analysis="claude-opus-5-5",
+            model_generation="claude-sonnet-5-5",
+        )
+
+        mock_response = MagicMock()
+        mock_response.stop_reason = "refusal"
+        mock_response.content = []
+
+        with patch("backend.llm_client.anthropic") as mock_anthropic:
+            mock_client = MagicMock()
+            mock_client.messages.create.return_value = mock_response
+            mock_anthropic.Anthropic.return_value = mock_client
+
+            with pytest.raises(ValueError, match="refusal"):
+                LLMClient(config).analyze("test prompt", "system prompt")
 
 
 class TestOllamaProvider:
@@ -377,6 +436,9 @@ class TestCustomProvider:
             assert result.input_tokens == 100
             assert result.output_tokens == 50
             assert result.model == "my-model"
+            call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+            assert call_kwargs["max_tokens"] == 8192
+            assert "max_completion_tokens" not in call_kwargs
 
     def test_complete_dispatch_routes_to_custom(self, mocker):
         """Should route 'custom' provider to _complete_openai method."""

@@ -29,8 +29,8 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
 
       # Optional: Override default models
-      #- LLM_MODEL_ANALYSIS=gemini-2.5-flash
-      #- LLM_MODEL_GENERATION=gemini-2.5-flash
+      #- LLM_MODEL_ANALYSIS=gemini-3.8-flash
+      #- LLM_MODEL_GENERATION=gemini-3.5-flash-lite
 
       # Local LLM: Ollama (experimental)
       #- LLM_PROVIDER=ollama
@@ -47,6 +47,6 @@ services:
       # Ensure directory is writable: either set 'user' above, or run:
       #   mkdir -p ./data && chmod 777 ./data
       - ./data:/app/data
-      # Optional: persist UI settings
-      # - ./config.user.yaml:/app/config.user.yaml
+      # Optional: provisioned model catalog (see backend/model_catalog.yaml)
+      # - ./models.yaml:/app/config/models.yaml:ro
     restart: unless-stopped

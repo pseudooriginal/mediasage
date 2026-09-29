@@ -7,6 +7,7 @@ from typing import Any
 import yaml
 from dotenv import load_dotenv
 
+from backend.model_catalog import MODEL_DEFAULTS
 from backend.models import AppConfig, DefaultsConfig, LLMConfig, PlexConfig
 
 # Load .env file (if it exists) - env vars take priority
@@ -38,31 +39,6 @@ def remove_empty_values(d: dict[str, Any]) -> dict[str, Any]:
         elif v not in (None, ""):
             result[k] = v
     return result
-
-
-# Default model mappings per provider
-MODEL_DEFAULTS = {
-    "anthropic": {
-        "analysis": "claude-sonnet-4-5",
-        "generation": "claude-haiku-4-5",
-    },
-    "openai": {
-        "analysis": "gpt-4.1",
-        "generation": "gpt-4.1-mini",
-    },
-    "gemini": {
-        "analysis": "gemini-2.5-flash",
-        "generation": "gemini-2.5-flash",
-    },
-    "ollama": {
-        "analysis": "",  # Populated from Ollama API
-        "generation": "",
-    },
-    "custom": {
-        "analysis": "",  # User-specified
-        "generation": "",
-    },
-}
 
 
 def load_yaml_config(config_path: Path | None = None) -> dict[str, Any]:
@@ -298,6 +274,7 @@ def update_config_values(updates: dict[str, Any]) -> AppConfig:
     # Create updated config by merging updates
     plex_updates = {}
     llm_updates = {}
+    catalog_defaults: set[str] = set()
 
     if "plex_url" in updates and updates["plex_url"]:
         plex_updates["url"] = updates["plex_url"]
@@ -320,13 +297,16 @@ def update_config_values(updates: dict[str, Any]) -> AppConfig:
             if env_keys.get(new_provider):
                 llm_updates["api_key"] = env_keys[new_provider]
 
-        # Auto-select default models for new provider
+        # Auto-select default models for new provider. They are applied in memory
+        # but not persisted, so the model catalog stays the source of truth.
         if new_provider in MODEL_DEFAULTS:
             defaults = MODEL_DEFAULTS[new_provider]
             if not updates.get("model_analysis"):
                 llm_updates["model_analysis"] = defaults["analysis"]
+                catalog_defaults.add("model_analysis")
             if not updates.get("model_generation"):
                 llm_updates["model_generation"] = defaults["generation"]
+                catalog_defaults.add("model_generation")
 
     if "llm_api_key" in updates and updates["llm_api_key"]:
         llm_updates["api_key"] = updates["llm_api_key"]
@@ -360,7 +340,10 @@ def update_config_values(updates: dict[str, Any]) -> AppConfig:
     if plex_updates:
         user_updates["plex"] = plex_updates
     if llm_updates:
-        user_updates["llm"] = llm_updates
+        # Empty values drop previously saved models from config.user.yaml
+        user_updates["llm"] = {
+            k: "" if k in catalog_defaults else v for k, v in llm_updates.items()
+        }
 
     if user_updates:
         save_user_config(user_updates)

@@ -339,8 +339,8 @@ plex:
 
 llm:
   provider: "gemini"
-  model_analysis: "gemini-2.5-flash"
-  model_generation: "gemini-2.5-flash"
+  model_analysis: "gemini-3.8-flash"
+  model_generation: "gemini-3.5-flash-lite"
   smart_generation: false  # true = use smarter model for both (higher quality, ~3-5x cost)
 
 defaults:
@@ -353,10 +353,34 @@ MediaSage uses a two-model strategy by default:
 
 | Role | Purpose | Models Used |
 |------|---------|-------------|
-| **Analysis** | Interpret prompts, suggest filters, analyze seed tracks | claude-sonnet-4-5 / gpt-4.1 / gemini-2.5-flash |
-| **Generation** | Select tracks from filtered list | claude-haiku-4-5 / gpt-4.1-mini / gemini-2.5-flash |
+| **Analysis** | Interpret prompts, suggest filters, analyze seed tracks | claude-opus-5-5 / gpt-6-sol / gemini-3.8-flash |
+| **Generation** | Select tracks from filtered list | claude-sonnet-5-5 / gpt-6-luna / gemini-3.5-flash-lite |
 
 This balances quality with cost. Enable `smart_generation: true` to use the analysis model for everything.
+
+### Model Catalog (provisionable)
+
+Per-provider default models, prices and context windows come from a model catalog.
+The bundled defaults are in [`backend/model_catalog.yaml`](backend/model_catalog.yaml).
+To change them without rebuilding the image, provision a YAML file at `config/models.yaml`
+(in Docker: `/app/config/models.yaml`, or any path set in `MEDIASAGE_MODELS_FILE`).
+It is deep-merged over the bundled catalog, so only list what you change:
+
+```yaml
+providers:
+  anthropic:
+    analysis: claude-opus-5-5
+    generation: claude-haiku-4-5
+models:
+  my-new-model:
+    input_cost: 1.00       # USD per million input tokens
+    output_cost: 4.00      # USD per million output tokens
+    context_window: 400000 # drives how many tracks are sent
+```
+
+Priority for the models actually used: `LLM_MODEL_*` env vars > models chosen explicitly in the UI
+(`data/config.user.yaml`) > `config.yaml` > the catalog defaults. Picking a provider in the UI no
+longer stores its default models, so catalog updates take effect after a restart.
 
 ### Local LLM Setup (Experimental)
 

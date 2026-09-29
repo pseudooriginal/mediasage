@@ -33,8 +33,8 @@ def create_mock_config(**overrides):
         "music_library": "Music",
         "llm_provider": "anthropic",
         "llm_api_key": "key",
-        "model_analysis": "claude-sonnet-4-5",
-        "model_generation": "claude-haiku-4-5",
+        "model_analysis": "claude-opus-5-5",
+        "model_generation": "claude-sonnet-5-5",
         "ollama_url": "http://localhost:11434",
         "custom_url": "",
     }

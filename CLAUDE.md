@@ -102,11 +102,13 @@ CUSTOM_CONTEXT_WINDOW=4096
 
 | Task | Anthropic | OpenAI | Gemini |
 |------|-----------|--------|--------|
-| Analysis | `claude-sonnet-4-5` | `gpt-4.1` | `gemini-2.5-flash` |
-| Generation | `claude-haiku-4-5` | `gpt-4.1-mini` | `gemini-2.5-flash` |
-| Context Limit | 200K tokens | 128K tokens | **1M tokens** |
+| Analysis | `claude-opus-5-5` | `gpt-6-sol` | `gemini-3.8-flash` |
+| Generation | `claude-sonnet-5-5` | `gpt-6-luna` | `gemini-3.5-flash-lite` |
+| Context Limit | 1M tokens | 922K input tokens | 1M tokens |
 
-Gemini's 1M context allows sending ~18,000 tracks to the AI, vs ~3,500 for Anthropic/OpenAI.
+Defaults, prices and context windows live in `backend/model_catalog.yaml` (loaded by
+`backend/model_catalog.py`). Deployments override them with a provisioned `config/models.yaml`
+(or `MEDIASAGE_MODELS_FILE`), deep-merged over the bundled file. Add new models there, not in code.
 
 Option: `smart_generation: true` uses analysis model for both (higher quality, ~3-5x cost)
 
